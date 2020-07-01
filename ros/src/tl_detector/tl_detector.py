@@ -98,8 +98,6 @@ class TLDetector(object):
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
-        if light_wp != -1:
-            rospy.logwarn("RED")
             
     def get_closest_waypoint(self, pose):
         """Identifies the closest path waypoint to the given position

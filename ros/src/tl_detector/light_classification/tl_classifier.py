@@ -42,7 +42,7 @@ class TLClassifier(object):
     def get_classification(self, image):        
         self.counter = self.counter + 1
         if self.counter < 5:
-            rospy.logwarn("tick")
+            #rospy.logwarn("tick")
             return self.light_class
         
         self.counter = 0
@@ -68,10 +68,10 @@ class TLClassifier(object):
             self.boxes = boxes[idxs, ...]            
             self.classes = classes[idxs, ...]
         end = time.time()
-        rospy.logwarn("Elapsed time: " + str(end - start))        
+        #rospy.logwarn("Elapsed time: " + str(end - start))        
         
-        rospy.logwarn(self.classes)                
-        rospy.logwarn(self.boxes)                
+        #rospy.logwarn(self.classes)                
+        #rospy.logwarn(self.boxes)                
         #TODO implement light color prediction
         height,width,channels = image.shape
         
@@ -86,30 +86,29 @@ class TLClassifier(object):
         cropped = image[y1:y2,x1:x2]
         
         if self.boxes is not None and self.boxes.shape[0] > 0:            
-            rospy.logwarn("van adat")
             for i in range(self.boxes.shape[0]):
                 y1 = int(height * self.boxes[i][0])
                 y2 = int(height * self.boxes[i][2])
                 x1 = int(width * self.boxes[i][1])
                 x2 = int(width * self.boxes[i][3])
                 cropped = image[y1:y2,x1:x2]
-                rospy.logwarn(" x1: " + str(x1)+" x2: " + str(x2)+" y1: " + str(y1)+" y2: " + str(y2))
-                rospy.logwarn("IMAGE SHAPE: " + str(cropped.shape))
+                #rospy.logwarn(" x1: " + str(x1)+" x2: " + str(x2)+" y1: " + str(y1)+" y2: " + str(y2))
+                #rospy.logwarn("IMAGE SHAPE: " + str(cropped.shape))
                 reds, greens = self.postfilter_light(cropped)
                 sum_red = sum_red + reds
                 sum_green = sum_green + greens
-                rospy.logwarn("added reds: " +str(reds) + "added greens: " + str(greens))        
+                #rospy.logwarn("added reds: " +str(reds) + "added greens: " + str(greens))        
         else:            
             sum_red, sum_green = self.postfilter_light(cropped)
         
-        rospy.logwarn("reds: " +str(sum_red) + "greens: " + str(sum_green))
+        #rospy.logwarn("reds: " +str(sum_red) + "greens: " + str(sum_green))
         
         if sum_red>sum_green and sum_red>100:
-            rospy.logwarn("RED!")
+            #rospy.logwarn("RED!")
             self.light_class = TrafficLight.RED
         
         elif sum_red<sum_green and sum_green>100:
-            rospy.logwarn("GREEN!")
+            #rospy.logwarn("GREEN!")
             self.light_class = TrafficLight.GREEN                    
         else:
             self.light_class = TrafficLight.UNKNOWN                    
