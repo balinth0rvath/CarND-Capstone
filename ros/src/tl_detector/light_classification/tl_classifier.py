@@ -143,3 +143,4 @@ class TLClassifier(object):
         greens = len(np.nonzero(output_img_green)[0])
             
         return reds, greens     
+
