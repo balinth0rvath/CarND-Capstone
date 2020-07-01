@@ -37,7 +37,8 @@ class TLClassifier(object):
         # The classification of the object (integer id).
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')    
         self.sess = tf.Session(graph=self.detection_graph) 
-                
+        
+        
     def get_classification(self, image):        
         self.counter = self.counter + 1
         if self.counter < 5:
@@ -49,25 +50,15 @@ class TLClassifier(object):
         image_np = np.expand_dims(np.asarray(image, dtype=np.uint8), 0)
         start = time.time()
         with self.detection_graph.as_default():                
-            # Actual detection.
             (boxes, scores, classes) = self.sess.run([self.detection_boxes, self.detection_scores, self.detection_classes], 
                                                 feed_dict={self.image_tensor: image_np})
 
-            # Remove unnecessary dimensions
             boxes = np.squeeze(boxes)
             scores = np.squeeze(scores)
             classes = np.squeeze(classes)
 
             min_score = 0.2
-            # Filter boxes with a confidence score less than `confidence_cutoff`
-            # boxes, scores, classes = filter_boxes(confidence_cutoff, boxes, scores, classes)
 
-            # The current box coordinates are normalized to a range between 0 and 1.
-            # This converts the coordinates actual location on the image.
-            #width, height = image.size
-            #box_coords = to_image_coords(boxes, height, width)
-
-            # Each class with be represented by a differently colored box
             n = len(classes)
             idxs = []            
             for i in range(n):                
@@ -89,18 +80,43 @@ class TLClassifier(object):
 
         x1 = 0
         x2 = width
+           
+        sum_red = 0
+        sum_green = 0
+        cropped = image[y1:y2,x1:x2]
         
-        #rospy.logwarn("x1: " +str(x1) + " x2: " + str(x2) + " y1: " + str(y1) + " y2: " + str(y2))
+        if self.boxes is not None and self.boxes.shape[0] > 0:            
+            rospy.logwarn("van adat")
+            for i in range(self.boxes.shape[0]):
+                y1 = int(height * self.boxes[i][0])
+                y2 = int(height * self.boxes[i][2])
+                x1 = int(width * self.boxes[i][1])
+                x2 = int(width * self.boxes[i][3])
+                cropped = image[y1:y2,x1:x2]
+                rospy.logwarn(" x1: " + str(x1)+" x2: " + str(x2)+" y1: " + str(y1)+" y2: " + str(y2))
+                rospy.logwarn("IMAGE SHAPE: " + str(cropped.shape))
+                reds, greens = self.postfilter_light(cropped)
+                sum_red = sum_red + reds
+                sum_green = sum_green + greens
+                rospy.logwarn("added reds: " +str(reds) + "added greens: " + str(greens))        
+        else:            
+            sum_red, sum_green = self.postfilter_light(cropped)
         
-        if self.boxes is not None:
-            if self.boxes.shape[0] > 0:            
-                rospy.logwarn("van adat")
-                y1 = int(600 * self.boxes[0][0])
-                y2 = int(600 * self.boxes[0][2])
-                x1 = int(800 * self.boxes[0][1])
-                x2 = int(800 * self.boxes[0][3])
-
-        image = image[y1:y2,x1:x2]
+        rospy.logwarn("reds: " +str(sum_red) + "greens: " + str(sum_green))
+        
+        if sum_red>sum_green and sum_red>100:
+            rospy.logwarn("RED!")
+            self.light_class = TrafficLight.RED
+        
+        elif sum_red<sum_green and sum_green>100:
+            rospy.logwarn("GREEN!")
+            self.light_class = TrafficLight.GREEN                    
+        else:
+            self.light_class = TrafficLight.UNKNOWN                    
+            
+        return self.light_class
+    
+    def postfilter_light(self, image):
         image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
         lower_red = np.array([0,150,50])
@@ -125,16 +141,5 @@ class TLClassifier(object):
 
         reds = len(np.nonzero(output_img_red)[0])
         greens = len(np.nonzero(output_img_green)[0])
-        rospy.logwarn("reds: " +str(reds) + "greens: " + str(greens))
-        
-        if reds>greens and reds>100:
-            rospy.logwarn("RED!")
-            self.light_class = TrafficLight.RED
-        
-        elif reds<greens and greens>100:
-            rospy.logwarn("GREEN!")
-            self.light_class = TrafficLight.GREEN                    
-        else:
-            self.light_class = TrafficLight.UNKNOWN                    
             
-        return self.light_class
+        return reds, greens     
