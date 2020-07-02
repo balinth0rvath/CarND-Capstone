@@ -5,15 +5,16 @@ import rospy
 import tensorflow as tf
 import os
 import time
+import rospkg
 
 class TLClassifier(object):
     def __init__(self):
-        #TODO load classifier
         self.counter = 0        
         self.light_class = TrafficLight.RED
-        rospy.logwarn("current path")
-        rospy.logwarn(os.path.abspath(os.getcwd()))
-        SSD_GRAPH_FILE = './light_classification/frozen_inference_graph.pb'
+        rospack = rospkg.RosPack()
+        SSD_GRAPH_FILE = rospack.get_path('tl_detector')+'/light_classification/frozen_inference_graph.pb'
+        rospy.logwarn("current path of classification model: " + SSD_GRAPH_FILE )
+        rospy.logwarn("don't start the sim. processing...")
         self.classes = []
         self.boxes = []
         
@@ -38,6 +39,7 @@ class TLClassifier(object):
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')    
         self.sess = tf.Session(graph=self.detection_graph) 
         
+        rospy.logwarn("ready.")
         
     def get_classification(self, image):        
         self.counter = self.counter + 1
@@ -68,11 +70,10 @@ class TLClassifier(object):
             self.boxes = boxes[idxs, ...]            
             self.classes = classes[idxs, ...]
         end = time.time()
-        #rospy.logwarn("Elapsed time: " + str(end - start))        
+        rospy.logwarn("Tensorflow session elapsed time: " + str(end - start))        
         
         #rospy.logwarn(self.classes)                
         #rospy.logwarn(self.boxes)                
-        #TODO implement light color prediction
         height,width,channels = image.shape
         
         y1 = 0

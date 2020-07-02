@@ -8,21 +8,6 @@ from std_msgs.msg import Int32
 
 import math
 
-'''
-This node will publish waypoints from the car's current position to some `x` distance ahead.
-
-As mentioned in the doc, you should ideally first implement a version which does not care
-about traffic lights or obstacles.
-
-Once you have created dbw_node, you will update this node to use the status of traffic lights too.
-
-Please note that our simulator also provides the exact location of traffic lights and their
-current status in `/vehicle/traffic_lights` message. You can use this message to build this node
-as well as to verify your TL classifier.
-
-TODO (for Yousuf and Aaron): Stopline location for each traffic light.
-'''
-
 LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = .5
 
@@ -30,7 +15,6 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        # TODO: Add other member variables you need below
         self.base_lane = None
         self.pose = None
         self.stopline_wp_idx = -1
@@ -40,7 +24,6 @@ class WaypointUpdater(object):
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
         
@@ -73,6 +56,7 @@ class WaypointUpdater(object):
         return closest_idx
         
     def publish_waypoints(self):
+        #rospy.logwarn("waypoints published")
         final_lane = self.generate_lane()
         self.final_waypoints_pub.publish(final_lane)
         
@@ -117,7 +101,6 @@ class WaypointUpdater(object):
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
         # rospy.logwarn("TRAFFIC CALLBACK")
         self.stopline_wp_idx = msg.data
 
